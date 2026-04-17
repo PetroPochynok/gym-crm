@@ -19,6 +19,9 @@ public class TrainingRepository {
     }
 
     public Training save(Training training) {
+        if (training.getId() == null) {
+            training.setId(trainingStorage.generateId());
+        }
         trainingStorage.getTrainings().put(training.getId(), training);
         return training;
     }

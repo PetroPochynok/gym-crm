@@ -10,9 +10,18 @@ import java.util.Map;
 public class TraineeStorage {
 
     private final Map<Long, Trainee> trainees = new HashMap<>();
+    private Long nextId = 1L;
 
     public Map<Long, Trainee> getTrainees() {
         return trainees;
+    }
+
+    public Long generateId() {
+        return nextId++;
+    }
+
+    public void setNextId(Long id) {
+        this.nextId = id;
     }
 
 }

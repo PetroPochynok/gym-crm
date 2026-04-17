@@ -19,6 +19,9 @@ public class TraineeRepository {
     }
 
     public Trainee save(Trainee trainee) {
+        if (trainee.getId() == null) {
+            trainee.setId(traineeStorage.generateId());
+        }
         traineeStorage.getTrainees().put(trainee.getId(), trainee);
         return trainee;
     }

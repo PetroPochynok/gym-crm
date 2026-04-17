@@ -19,6 +19,9 @@ public class TrainerRepository {
     }
 
     public Trainer save(Trainer trainer) {
+        if (trainer.getId() == null) {
+            trainer.setId(trainerStorage.generateId());
+        }
         trainerStorage.getTrainers().put(trainer.getId(), trainer);
         return trainer;
     }

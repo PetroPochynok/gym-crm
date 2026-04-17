@@ -31,6 +31,10 @@ public class GymFacade {
         return traineeService.create(trainee);
     }
 
+    public Trainee updateTrainee(Trainee trainee) {
+        return traineeService.update(trainee);
+    }
+
     public Optional<Trainee> getTraineeById(Long id) {
         return traineeService.getById(id);
     }
@@ -46,6 +50,10 @@ public class GymFacade {
     // Trainer
     public Trainer createTrainer(Trainer trainer) {
         return trainerService.create(trainer);
+    }
+
+    public Trainer updateTrainer(Trainer trainer) {
+        return trainerService.update(trainer);
     }
 
     public Optional<Trainer> getTrainerById(Long id) {

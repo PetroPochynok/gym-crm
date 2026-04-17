@@ -4,6 +4,9 @@ import com.epam.gym.crm.model.Trainee;
 import com.epam.gym.crm.model.Trainer;
 import com.epam.gym.crm.model.Training;
 import com.epam.gym.crm.model.TrainingType;
+import com.epam.gym.crm.repository.TraineeRepository;
+import com.epam.gym.crm.repository.TrainerRepository;
+import com.epam.gym.crm.repository.TrainingRepository;
 import com.epam.gym.crm.service.UsernameRegistryService;
 import com.epam.gym.crm.storage.TraineeStorage;
 import com.epam.gym.crm.storage.TrainerStorage;
@@ -39,6 +42,9 @@ public class StorageDataInitializer implements InitializingBean {
     private TrainerStorage trainerStorage;
     private TrainingStorage trainingStorage;
     private UsernameRegistryService usernameRegistryService;
+    private TraineeRepository traineeRepository;
+    private TrainerRepository trainerRepository;
+    private TrainingRepository trainingRepository;
 
     public StorageDataInitializer(ResourceLoader resourceLoader) {
         this.resourceLoader = resourceLoader;
@@ -64,16 +70,36 @@ public class StorageDataInitializer implements InitializingBean {
         this.usernameRegistryService = usernameRegistryService;
     }
 
+    @Autowired
+    public void setTraineeRepository(TraineeRepository traineeRepository) {
+        this.traineeRepository = traineeRepository;
+    }
+
+    @Autowired
+    public void setTrainerRepository(TrainerRepository trainerRepository) {
+        this.trainerRepository = trainerRepository;
+    }
+
+    @Autowired
+    public void setTrainingRepository(TrainingRepository trainingRepository) {
+        this.trainingRepository = trainingRepository;
+    }
+
     @Override
     public void afterPropertiesSet() {
-        if (!traineeStorage.getTrainees().isEmpty() || !trainerStorage.getTrainers().isEmpty() || !trainingStorage.getTrainings().isEmpty()) {
+        LOG.info("Starting data initialization...");
+
+        if (loadSavedData()) {
+            LOG.info("Successfully loaded saved data from files");
             registerExistingUsernames();
-            LOG.info("Storages already contain data. Seed initialization skipped.");
+            updateNextIds();
             return;
         }
 
+        LOG.info("No saved data files found. Loading seed data from properties...");
         Properties properties = loadProperties();
         if (properties.isEmpty()) {
+            LOG.warn("No seed data found. Storages initialized as empty.");
             return;
         }
 
@@ -81,10 +107,151 @@ public class StorageDataInitializer implements InitializingBean {
         initializeTrainers(properties);
         initializeTrainings(properties);
 
+        updateNextIds();
+
         LOG.info("Storage initialization completed: trainees={}, trainers={}, trainings={}",
                 traineeStorage.getTrainees().size(),
                 trainerStorage.getTrainers().size(),
                 trainingStorage.getTrainings().size());
+    }
+
+    private boolean loadSavedData() {
+        File traineesFile = new File("trainees.txt");
+        File trainersFile = new File("trainers.txt");
+        File trainingsFile = new File("trainings.txt");
+
+        if (!traineesFile.exists() && !trainersFile.exists() && !trainingsFile.exists()) {
+            LOG.debug("No saved data files found");
+            return false;
+        }
+
+        try {
+            if (traineesFile.exists()) {
+                loadTraineesFromFile("trainees.txt");
+                LOG.info("Loaded {} trainees from file", traineeStorage.getTrainees().size());
+            }
+
+            if (trainersFile.exists()) {
+                loadTrainersFromFile("trainers.txt");
+                LOG.info("Loaded {} trainers from file", trainerStorage.getTrainers().size());
+            }
+
+            if (trainingsFile.exists()) {
+                loadTrainingsFromFile("trainings.txt");
+                LOG.info("Loaded {} trainings from file", trainingStorage.getTrainings().size());
+            }
+
+            return true;
+        } catch (IOException exception) {
+            LOG.error("Failed to load saved data from files", exception);
+            return false;
+        }
+    }
+
+    private void loadTraineesFromFile(String filename) throws IOException {
+        try (BufferedReader reader = new BufferedReader(new FileReader(filename))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                if (line.trim().isEmpty() || line.startsWith("#")) {
+                    continue;
+                }
+
+                String[] parts = line.split("=", 2);
+                if (parts.length != 2) continue;
+
+                String[] fields = parts[1].split(",");
+                if (fields.length < 5) continue;
+
+                Trainee trainee = new Trainee();
+                trainee.setFirstName(fields[0].trim());
+                trainee.setLastName(fields[1].trim());
+                trainee.setDateOfBirth(LocalDate.parse(fields[2].trim()));
+                trainee.setAddress(fields[3].trim());
+                trainee.setActive(Boolean.parseBoolean(fields[4].trim()));
+
+                String username = usernameRegistryService.reserveUsername(trainee.getFirstName(), trainee.getLastName());
+                trainee.setUsername(username);
+                trainee.setPassword(CredentialGenerator.generatePassword());
+
+                traineeRepository.save(trainee);
+            }
+        }
+    }
+
+    private void loadTrainersFromFile(String filename) throws IOException {
+        try (BufferedReader reader = new BufferedReader(new FileReader(filename))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                if (line.trim().isEmpty() || line.startsWith("#")) {
+                    continue;
+                }
+
+                String[] parts = line.split("=", 2);
+                if (parts.length != 2) continue;
+
+                String[] fields = parts[1].split(",");
+                if (fields.length < 4) continue;
+
+                Trainer trainer = new Trainer();
+                trainer.setFirstName(fields[0].trim());
+                trainer.setLastName(fields[1].trim());
+                trainer.setSpecialization(fields[2].trim());
+                trainer.setActive(Boolean.parseBoolean(fields[3].trim()));
+
+                String username = usernameRegistryService.reserveUsername(trainer.getFirstName(), trainer.getLastName());
+                trainer.setUsername(username);
+                trainer.setPassword(CredentialGenerator.generatePassword());
+
+                trainerRepository.save(trainer);
+            }
+        }
+    }
+
+    private void loadTrainingsFromFile(String filename) throws IOException {
+        try (BufferedReader reader = new BufferedReader(new FileReader(filename))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                if (line.trim().isEmpty() || line.startsWith("#")) {
+                    continue;
+                }
+
+                String[] parts = line.split("=", 2);
+                if (parts.length != 2) continue;
+
+                String[] fields = parts[1].split(",");
+                if (fields.length < 7) continue;
+
+                Training training = new Training();
+                training.setTraineeId(Long.parseLong(fields[0].trim()));
+                training.setTrainerId(Long.parseLong(fields[1].trim()));
+                training.setTrainingName(fields[2].trim());
+                training.setTrainingType(TrainingType.valueOf(fields[3].trim()));
+                training.setTrainingDate(LocalDate.parse(fields[4].trim()));
+                training.setDuration(Integer.parseInt(fields[5].trim()));
+
+                trainingRepository.save(training);
+            }
+        }
+    }
+
+    private void updateNextIds() {
+        long maxTraineeId = traineeStorage.getTrainees().keySet().stream()
+                .mapToLong(Long::longValue)
+                .max()
+                .orElse(0L);
+        traineeStorage.setNextId(maxTraineeId + 1);
+
+        long maxTrainerId = trainerStorage.getTrainers().keySet().stream()
+                .mapToLong(Long::longValue)
+                .max()
+                .orElse(0L);
+        trainerStorage.setNextId(maxTrainerId + 1);
+
+        long maxTrainingId = trainingStorage.getTrainings().keySet().stream()
+                .mapToLong(Long::longValue)
+                .max()
+                .orElse(0L);
+        trainingStorage.setNextId(maxTrainingId + 1);
     }
 
     @PreDestroy
@@ -265,3 +432,12 @@ public class StorageDataInitializer implements InitializingBean {
         usernameRegistryService.initializeFromExisting(existingUsernames);
     }
 }
+
+
+
+
+
+
+
+
+
