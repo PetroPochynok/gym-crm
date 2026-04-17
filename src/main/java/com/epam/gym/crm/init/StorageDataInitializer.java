@@ -18,8 +18,8 @@ import org.springframework.core.io.Resource;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.stereotype.Component;
 
-import java.io.IOException;
-import java.io.InputStream;
+import javax.annotation.PreDestroy;
+import java.io.*;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Properties;
@@ -85,6 +85,72 @@ public class StorageDataInitializer implements InitializingBean {
                 traineeStorage.getTrainees().size(),
                 trainerStorage.getTrainers().size(),
                 trainingStorage.getTrainings().size());
+    }
+
+    @PreDestroy
+    public void saveDataToFiles() {
+        LOG.info("Saving data to files on shutdown...");
+
+        try {
+            saveTraineesToFile("trainees.txt");
+            saveTrainersToFile("trainers.txt");
+            saveTrainingsToFile("trainings.txt");
+
+            LOG.info("Data persistence completed successfully");
+        } catch (IOException exception) {
+            LOG.error("Failed to save data to files", exception);
+        }
+    }
+
+    private void saveTraineesToFile(String filename) throws IOException {
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(filename))) {
+            writer.write("# Trainees\n");
+
+            for (Trainee trainee : traineeStorage.getTrainees().values()) {
+                String line = String.format("trainee.%d=%s,%s,%s,%s,%s\n",
+                        trainee.getId(),
+                        trainee.getFirstName(),
+                        trainee.getLastName(),
+                        trainee.getDateOfBirth(),
+                        trainee.getAddress(),
+                        trainee.isActive());
+                writer.write(line);
+            }
+        }
+    }
+
+    private void saveTrainersToFile(String filename) throws IOException {
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(filename))) {
+            writer.write("# Trainers\n");
+
+            for (Trainer trainer : trainerStorage.getTrainers().values()) {
+                String line = String.format("trainer.%d=%s,%s,%s,%s\n",
+                        trainer.getId(),
+                        trainer.getFirstName(),
+                        trainer.getLastName(),
+                        trainer.getSpecialization(),
+                        trainer.isActive());
+                writer.write(line);
+            }
+        }
+    }
+
+    private void saveTrainingsToFile(String filename) throws IOException {
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(filename))) {
+            writer.write("# Trainings\n");
+
+            for (Training training : trainingStorage.getTrainings().values()) {
+                String line = String.format("training.%d=%d,%d,%s,%s,%s,%d\n",
+                        training.getId(),
+                        training.getTraineeId(),
+                        training.getTrainerId(),
+                        training.getTrainingName(),
+                        training.getTrainingType(),
+                        training.getTrainingDate(),
+                        training.getDuration());
+                writer.write(line);
+            }
+        }
     }
 
     private Properties loadProperties() {

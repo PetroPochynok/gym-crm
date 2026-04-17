@@ -12,6 +12,14 @@ public class GymCrmApplication {
     public static void main(String[] args) {
         try (AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext(ApplicationConfig.class)) {
             LOG.info("Gym CRM application context started. Beans loaded: {}", context.getBeanDefinitionCount());
+            LOG.info("Application is ready. Data will be persisted to files on shutdown.");
+
+            Thread.currentThread().join();
+        } catch (InterruptedException exception) {
+            LOG.debug("Application interrupted: {}", exception.getMessage());
+            Thread.currentThread().interrupt();
+        } catch (Exception exception) {
+            LOG.error("Application error occurred", exception);
         }
     }
 }
