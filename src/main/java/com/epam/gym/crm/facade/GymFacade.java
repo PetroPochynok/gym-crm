@@ -1,4 +1,4 @@
-package com.epam.gym.crm.facede;
+package com.epam.gym.crm.facade;
 
 import com.epam.gym.crm.model.Trainee;
 import com.epam.gym.crm.model.Trainer;

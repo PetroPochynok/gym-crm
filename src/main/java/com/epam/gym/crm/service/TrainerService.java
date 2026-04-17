@@ -8,31 +8,25 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 @Service
 public class TrainerService {
 
     private TrainerRepository trainerRepository;
+    private UsernameRegistryService usernameRegistryService;
 
     @Autowired
     public void setTrainerRepository(TrainerRepository trainerRepository) {
         this.trainerRepository = trainerRepository;
     }
 
+    @Autowired
+    public void setUsernameRegistryService(UsernameRegistryService usernameRegistryService) {
+        this.usernameRegistryService = usernameRegistryService;
+    }
+
     public Trainer create(Trainer trainer) {
-        Set<String> usernames = trainerRepository.findAll()
-                .stream()
-                .map(Trainer::getUsername)
-                .collect(Collectors.toSet());
-
-        String username = CredentialGenerator.generateUsername(
-                trainer.getFirstName(),
-                trainer.getLastName(),
-                usernames
-        );
-
+        String username = usernameRegistryService.reserveUsername(trainer.getFirstName(), trainer.getLastName());
         String password = CredentialGenerator.generatePassword();
 
         trainer.setUsername(username);

@@ -1,7 +1,6 @@
 package com.epam.gym.crm.util;
 
 import java.security.SecureRandom;
-import java.util.Set;
 
 public class CredentialGenerator {
 
@@ -20,18 +19,4 @@ public class CredentialGenerator {
         return sb.toString();
     }
 
-    public static String generateUsername(String firstName, String lastName, Set<String> existingUsernames) {
-        String baseUsername = firstName + "." + lastName;
-
-        if (!existingUsernames.contains(baseUsername)) {
-            return baseUsername;
-        }
-
-        int counter = 1;
-        while (existingUsernames.contains(baseUsername + counter)) {
-            counter++;
-        }
-
-        return baseUsername + counter;
-    }
 }

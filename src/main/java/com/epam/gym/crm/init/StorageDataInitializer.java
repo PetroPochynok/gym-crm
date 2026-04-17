@@ -4,6 +4,7 @@ import com.epam.gym.crm.model.Trainee;
 import com.epam.gym.crm.model.Trainer;
 import com.epam.gym.crm.model.Training;
 import com.epam.gym.crm.model.TrainingType;
+import com.epam.gym.crm.service.UsernameRegistryService;
 import com.epam.gym.crm.storage.TraineeStorage;
 import com.epam.gym.crm.storage.TrainerStorage;
 import com.epam.gym.crm.storage.TrainingStorage;
@@ -20,10 +21,9 @@ import org.springframework.stereotype.Component;
 import java.io.IOException;
 import java.io.InputStream;
 import java.time.LocalDate;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Properties;
-import java.util.Set;
+import java.util.stream.Stream;
 
 @Component
 public class StorageDataInitializer implements InitializingBean {
@@ -38,6 +38,7 @@ public class StorageDataInitializer implements InitializingBean {
     private TraineeStorage traineeStorage;
     private TrainerStorage trainerStorage;
     private TrainingStorage trainingStorage;
+    private UsernameRegistryService usernameRegistryService;
 
     public StorageDataInitializer(ResourceLoader resourceLoader) {
         this.resourceLoader = resourceLoader;
@@ -58,9 +59,15 @@ public class StorageDataInitializer implements InitializingBean {
         this.trainingStorage = trainingStorage;
     }
 
+    @Autowired
+    public void setUsernameRegistryService(UsernameRegistryService usernameRegistryService) {
+        this.usernameRegistryService = usernameRegistryService;
+    }
+
     @Override
     public void afterPropertiesSet() {
         if (!traineeStorage.getTrainees().isEmpty() || !trainerStorage.getTrainers().isEmpty() || !trainingStorage.getTrainings().isEmpty()) {
+            registerExistingUsernames();
             LOG.info("Storages already contain data. Seed initialization skipped.");
             return;
         }
@@ -99,7 +106,6 @@ public class StorageDataInitializer implements InitializingBean {
     }
 
     private void initializeTrainees(Properties properties) {
-        Set<String> usernames = new HashSet<>();
         List<String> keys = properties.stringPropertyNames().stream()
                 .filter(key -> key.startsWith("trainee."))
                 .sorted()
@@ -116,17 +122,15 @@ public class StorageDataInitializer implements InitializingBean {
             trainee.setAddress(fields[3].trim());
             trainee.setActive(Boolean.parseBoolean(fields[4].trim()));
 
-            String username = CredentialGenerator.generateUsername(trainee.getFirstName(), trainee.getLastName(), usernames);
+            String username = usernameRegistryService.reserveUsername(trainee.getFirstName(), trainee.getLastName());
             trainee.setUsername(username);
             trainee.setPassword(CredentialGenerator.generatePassword());
-            usernames.add(username);
 
             traineeStorage.getTrainees().put(trainee.getId(), trainee);
         }
     }
 
     private void initializeTrainers(Properties properties) {
-        Set<String> usernames = new HashSet<>();
         List<String> keys = properties.stringPropertyNames().stream()
                 .filter(key -> key.startsWith("trainer."))
                 .sorted()
@@ -142,10 +146,9 @@ public class StorageDataInitializer implements InitializingBean {
             trainer.setSpecialization(fields[2].trim());
             trainer.setActive(Boolean.parseBoolean(fields[3].trim()));
 
-            String username = CredentialGenerator.generateUsername(trainer.getFirstName(), trainer.getLastName(), usernames);
+            String username = usernameRegistryService.reserveUsername(trainer.getFirstName(), trainer.getLastName());
             trainer.setUsername(username);
             trainer.setPassword(CredentialGenerator.generatePassword());
-            usernames.add(username);
 
             trainerStorage.getTrainers().put(trainer.getId(), trainer);
         }
@@ -184,5 +187,15 @@ public class StorageDataInitializer implements InitializingBean {
 
     private Long extractId(String key, String prefix) {
         return Long.parseLong(key.substring(prefix.length()));
+    }
+
+    private void registerExistingUsernames() {
+        List<String> existingUsernames = Stream.concat(
+                        traineeStorage.getTrainees().values().stream().map(Trainee::getUsername),
+                        trainerStorage.getTrainers().values().stream().map(Trainer::getUsername))
+                .filter(username -> username != null && !username.isBlank())
+                .toList();
+
+        usernameRegistryService.initializeFromExisting(existingUsernames);
     }
 }

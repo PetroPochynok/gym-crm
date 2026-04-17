@@ -8,31 +8,25 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 @Service
 public class TraineeService {
 
     private TraineeRepository traineeRepository;
+    private UsernameRegistryService usernameRegistryService;
 
     @Autowired
     public void setTraineeRepository(TraineeRepository traineeRepository) {
         this.traineeRepository = traineeRepository;
     }
 
+    @Autowired
+    public void setUsernameRegistryService(UsernameRegistryService usernameRegistryService) {
+        this.usernameRegistryService = usernameRegistryService;
+    }
+
     public Trainee create(Trainee trainee) {
-        Set<String> existingUsernames = traineeRepository.findAll()
-                .stream()
-                .map(Trainee::getUsername)
-                .collect(Collectors.toSet());
-
-        String username = CredentialGenerator.generateUsername(
-                trainee.getFirstName(),
-                trainee.getLastName(),
-                existingUsernames
-        );
-
+        String username = usernameRegistryService.reserveUsername(trainee.getFirstName(), trainee.getLastName());
         String password = CredentialGenerator.generatePassword();
 
         trainee.setUsername(username);
@@ -55,6 +49,7 @@ public class TraineeService {
     }
 
     public void delete(Long id) {
+        traineeRepository.findById(id).map(Trainee::getUsername).ifPresent(usernameRegistryService::releaseUsername);
         traineeRepository.delete(id);
     }
 }
