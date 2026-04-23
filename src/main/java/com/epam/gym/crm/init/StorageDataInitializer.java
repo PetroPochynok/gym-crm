@@ -14,13 +14,13 @@ import com.epam.gym.crm.storage.TrainingStorage;
 import com.epam.gym.crm.util.CredentialGenerator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.stereotype.Component;
 
+import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import java.io.*;
 import java.time.LocalDate;
@@ -29,7 +29,7 @@ import java.util.Properties;
 import java.util.stream.Stream;
 
 @Component
-public class StorageDataInitializer implements InitializingBean {
+public class StorageDataInitializer {
 
     private static final Logger LOG = LoggerFactory.getLogger(StorageDataInitializer.class);
 
@@ -85,8 +85,8 @@ public class StorageDataInitializer implements InitializingBean {
         this.trainingRepository = trainingRepository;
     }
 
-    @Override
-    public void afterPropertiesSet() {
+    @PostConstruct
+    public void initializeData() {
         LOG.info("Starting data initialization...");
 
         if (loadSavedData()) {
@@ -432,12 +432,3 @@ public class StorageDataInitializer implements InitializingBean {
         usernameRegistryService.initializeFromExisting(existingUsernames);
     }
 }
-
-
-
-
-
-
-
-
-
