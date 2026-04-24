@@ -4,9 +4,6 @@ import com.epam.gym.crm.model.Trainee;
 import com.epam.gym.crm.model.Trainer;
 import com.epam.gym.crm.model.Training;
 import com.epam.gym.crm.model.TrainingType;
-import com.epam.gym.crm.repository.TraineeRepository;
-import com.epam.gym.crm.repository.TrainerRepository;
-import com.epam.gym.crm.repository.TrainingRepository;
 import com.epam.gym.crm.service.UsernameRegistryService;
 import com.epam.gym.crm.storage.TraineeStorage;
 import com.epam.gym.crm.storage.TrainerStorage;
@@ -42,9 +39,6 @@ public class StorageDataInitializer {
     private TrainerStorage trainerStorage;
     private TrainingStorage trainingStorage;
     private UsernameRegistryService usernameRegistryService;
-    private TraineeRepository traineeRepository;
-    private TrainerRepository trainerRepository;
-    private TrainingRepository trainingRepository;
 
     public StorageDataInitializer(ResourceLoader resourceLoader) {
         this.resourceLoader = resourceLoader;
@@ -70,20 +64,6 @@ public class StorageDataInitializer {
         this.usernameRegistryService = usernameRegistryService;
     }
 
-    @Autowired
-    public void setTraineeRepository(TraineeRepository traineeRepository) {
-        this.traineeRepository = traineeRepository;
-    }
-
-    @Autowired
-    public void setTrainerRepository(TrainerRepository trainerRepository) {
-        this.trainerRepository = trainerRepository;
-    }
-
-    @Autowired
-    public void setTrainingRepository(TrainingRepository trainingRepository) {
-        this.trainingRepository = trainingRepository;
-    }
 
     @PostConstruct
     public void initializeData() {
@@ -127,17 +107,17 @@ public class StorageDataInitializer {
 
         try {
             if (traineesFile.exists()) {
-                loadTraineesFromFile("trainees.txt");
+                loadTraineesFromFile();
                 LOG.info("Loaded {} trainees from file", traineeStorage.getTrainees().size());
             }
 
             if (trainersFile.exists()) {
-                loadTrainersFromFile("trainers.txt");
+                loadTrainersFromFile();
                 LOG.info("Loaded {} trainers from file", trainerStorage.getTrainers().size());
             }
 
             if (trainingsFile.exists()) {
-                loadTrainingsFromFile("trainings.txt");
+                loadTrainingsFromFile();
                 LOG.info("Loaded {} trainings from file", trainingStorage.getTrainings().size());
             }
 
@@ -148,8 +128,8 @@ public class StorageDataInitializer {
         }
     }
 
-    private void loadTraineesFromFile(String filename) throws IOException {
-        try (BufferedReader reader = new BufferedReader(new FileReader(filename))) {
+    private void loadTraineesFromFile() throws IOException {
+        try (BufferedReader reader = new BufferedReader(new FileReader("trainees.txt"))) {
             String line;
             while ((line = reader.readLine()) != null) {
                 if (line.trim().isEmpty() || line.startsWith("#")) {
@@ -163,6 +143,7 @@ public class StorageDataInitializer {
                 if (fields.length < 5) continue;
 
                 Trainee trainee = new Trainee();
+                trainee.setId(extractId(parts[0], "trainee."));
                 trainee.setFirstName(fields[0].trim());
                 trainee.setLastName(fields[1].trim());
                 trainee.setDateOfBirth(LocalDate.parse(fields[2].trim()));
@@ -173,13 +154,13 @@ public class StorageDataInitializer {
                 trainee.setUsername(username);
                 trainee.setPassword(CredentialGenerator.generatePassword());
 
-                traineeRepository.save(trainee);
+                traineeStorage.getTrainees().put(trainee.getId(), trainee);
             }
         }
     }
 
-    private void loadTrainersFromFile(String filename) throws IOException {
-        try (BufferedReader reader = new BufferedReader(new FileReader(filename))) {
+    private void loadTrainersFromFile() throws IOException {
+        try (BufferedReader reader = new BufferedReader(new FileReader("trainers.txt"))) {
             String line;
             while ((line = reader.readLine()) != null) {
                 if (line.trim().isEmpty() || line.startsWith("#")) {
@@ -193,6 +174,7 @@ public class StorageDataInitializer {
                 if (fields.length < 4) continue;
 
                 Trainer trainer = new Trainer();
+                trainer.setId(extractId(parts[0], "trainer."));
                 trainer.setFirstName(fields[0].trim());
                 trainer.setLastName(fields[1].trim());
                 trainer.setSpecialization(fields[2].trim());
@@ -202,13 +184,13 @@ public class StorageDataInitializer {
                 trainer.setUsername(username);
                 trainer.setPassword(CredentialGenerator.generatePassword());
 
-                trainerRepository.save(trainer);
+                trainerStorage.getTrainers().put(trainer.getId(), trainer);
             }
         }
     }
 
-    private void loadTrainingsFromFile(String filename) throws IOException {
-        try (BufferedReader reader = new BufferedReader(new FileReader(filename))) {
+    private void loadTrainingsFromFile() throws IOException {
+        try (BufferedReader reader = new BufferedReader(new FileReader("trainings.txt"))) {
             String line;
             while ((line = reader.readLine()) != null) {
                 if (line.trim().isEmpty() || line.startsWith("#")) {
@@ -222,6 +204,7 @@ public class StorageDataInitializer {
                 if (fields.length < 7) continue;
 
                 Training training = new Training();
+                training.setId(extractId(parts[0], "training."));
                 training.setTraineeId(Long.parseLong(fields[0].trim()));
                 training.setTrainerId(Long.parseLong(fields[1].trim()));
                 training.setTrainingName(fields[2].trim());
@@ -229,7 +212,7 @@ public class StorageDataInitializer {
                 training.setTrainingDate(LocalDate.parse(fields[4].trim()));
                 training.setDuration(Integer.parseInt(fields[5].trim()));
 
-                trainingRepository.save(training);
+                trainingStorage.getTrainings().put(training.getId(), training);
             }
         }
     }
