@@ -242,9 +242,9 @@ public class StorageDataInitializer {
         LOG.info("Saving data to files on shutdown...");
 
         try {
-            saveTraineesToFile("trainees.txt");
-            saveTrainersToFile("trainers.txt");
-            saveTrainingsToFile("trainings.txt");
+            saveTraineesToFile();
+            saveTrainersToFile();
+            saveTrainingsToFile();
 
             LOG.info("Data persistence completed successfully");
         } catch (IOException exception) {
@@ -252,8 +252,8 @@ public class StorageDataInitializer {
         }
     }
 
-    private void saveTraineesToFile(String filename) throws IOException {
-        try (BufferedWriter writer = new BufferedWriter(new FileWriter(filename))) {
+    private void saveTraineesToFile() throws IOException {
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter("trainees.txt"))) {
             writer.write("# Trainees\n");
 
             for (Trainee trainee : traineeStorage.getTrainees().values()) {
@@ -269,8 +269,8 @@ public class StorageDataInitializer {
         }
     }
 
-    private void saveTrainersToFile(String filename) throws IOException {
-        try (BufferedWriter writer = new BufferedWriter(new FileWriter(filename))) {
+    private void saveTrainersToFile() throws IOException {
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter("trainers.txt"))) {
             writer.write("# Trainers\n");
 
             for (Trainer trainer : trainerStorage.getTrainers().values()) {
@@ -285,8 +285,8 @@ public class StorageDataInitializer {
         }
     }
 
-    private void saveTrainingsToFile(String filename) throws IOException {
-        try (BufferedWriter writer = new BufferedWriter(new FileWriter(filename))) {
+    private void saveTrainingsToFile() throws IOException {
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter("trainings.txt"))) {
             writer.write("# Trainings\n");
 
             for (Training training : trainingStorage.getTrainings().values()) {
