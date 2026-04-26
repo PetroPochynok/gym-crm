@@ -8,6 +8,6 @@ import lombok.*;
 @EqualsAndHashCode(callSuper = true)
 public class Trainer extends User{
 
-    private String specialization;
+    private TrainingType specialization;
 
 }

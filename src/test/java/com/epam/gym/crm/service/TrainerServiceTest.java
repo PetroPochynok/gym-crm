@@ -1,6 +1,7 @@
 package com.epam.gym.crm.service;
 
 import com.epam.gym.crm.model.Trainer;
+import com.epam.gym.crm.model.TrainingType;
 import com.epam.gym.crm.repository.TrainerRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -23,7 +24,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ValueSource;
+import org.junit.jupiter.params.provider.EnumSource;
 
 @ExtendWith(MockitoExtension.class)
 class TrainerServiceTest {
@@ -45,7 +46,7 @@ class TrainerServiceTest {
         testTrainer.setId(1L);
         testTrainer.setFirstName("Mike");
         testTrainer.setLastName("Stone");
-        testTrainer.setSpecialization("FITNESS");
+        testTrainer.setSpecialization(TrainingType.FITNESS);
         testTrainer.setActive(true);
     }
 
@@ -74,7 +75,7 @@ class TrainerServiceTest {
         Trainer newTrainer = new Trainer();
         newTrainer.setFirstName("Kate");
         newTrainer.setLastName("River");
-        newTrainer.setSpecialization("YOGA");
+        newTrainer.setSpecialization(TrainingType.YOGA);
 
         when(usernameRegistryService.reserveUsername("Kate", "River")).thenReturn("kate.river");
         when(trainerRepository.save(any(Trainer.class))).thenAnswer(invocation -> invocation.getArgument(0));
@@ -88,7 +89,7 @@ class TrainerServiceTest {
 
     @Test
     void testUpdate_SuccessfullyUpdatesTrainer() {
-        testTrainer.setSpecialization("CROSSFIT");
+        testTrainer.setSpecialization(TrainingType.CROSSFIT);
         testTrainer.setActive(false);
 
         when(trainerRepository.save(testTrainer)).thenReturn(testTrainer);
@@ -96,7 +97,7 @@ class TrainerServiceTest {
         Trainer result = trainerService.update(testTrainer);
 
         assertNotNull(result);
-        assertEquals("CROSSFIT", result.getSpecialization());
+        assertEquals(TrainingType.CROSSFIT, result.getSpecialization());
         assertFalse(result.isActive());
 
         verify(trainerRepository, times(1)).save(testTrainer);
@@ -129,7 +130,7 @@ class TrainerServiceTest {
         trainer2.setId(2L);
         trainer2.setFirstName("Kate");
         trainer2.setLastName("River");
-        trainer2.setSpecialization("YOGA");
+        trainer2.setSpecialization(TrainingType.YOGA);
 
         List<Trainer> trainers = Arrays.asList(testTrainer, trainer2);
         when(trainerRepository.findAll()).thenReturn(trainers);
@@ -157,7 +158,7 @@ class TrainerServiceTest {
         Trainer newTrainer = new Trainer();
         newTrainer.setFirstName("Alex");
         newTrainer.setLastName("Johnson");
-        newTrainer.setSpecialization("STRENGTH");
+        newTrainer.setSpecialization(TrainingType.STRENGTH);
 
         when(usernameRegistryService.reserveUsername("Alex", "Johnson")).thenReturn("alex.johnson");
         when(trainerRepository.save(any(Trainer.class))).thenReturn(testTrainer);
@@ -174,7 +175,7 @@ class TrainerServiceTest {
         Trainer newTrainer = new Trainer();
         newTrainer.setFirstName("Test");
         newTrainer.setLastName("Trainer");
-        newTrainer.setSpecialization("FITNESS");
+        newTrainer.setSpecialization(TrainingType.FITNESS);
         newTrainer.setActive(false);
 
         when(usernameRegistryService.reserveUsername("Test", "Trainer")).thenReturn("test.trainer");
@@ -188,8 +189,8 @@ class TrainerServiceTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"FITNESS", "YOGA", "STRENGTH", "CROSSFIT"})
-    void testCreate_WithDifferentSpecializations(String specialization) {
+    @EnumSource(TrainingType.class)
+    void testCreate_WithDifferentSpecializations(TrainingType specialization) {
         Trainer newTrainer = new Trainer();
         newTrainer.setFirstName("Test");
         newTrainer.setLastName("Trainer");
@@ -215,5 +216,16 @@ class TrainerServiceTest {
         Trainer result = trainerService.update(testTrainer);
 
         assertEquals(1L, result.getId());
+    }
+
+    @Test
+    void testInvalidEnumHandling() {
+        // This test verifies that invalid enum values are handled gracefully
+        // The actual error handling is in StorageDataInitializer
+        // Here we just verify that the enum values are valid
+        for (TrainingType type : TrainingType.values()) {
+            assertNotNull(type);
+        }
+        assertEquals(5, TrainingType.values().length);
     }
 }

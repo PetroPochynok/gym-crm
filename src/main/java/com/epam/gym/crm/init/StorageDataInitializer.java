@@ -177,7 +177,7 @@ public class StorageDataInitializer {
                 trainer.setId(extractId(parts[0], "trainer."));
                 trainer.setFirstName(fields[0].trim());
                 trainer.setLastName(fields[1].trim());
-                trainer.setSpecialization(fields[2].trim());
+                trainer.setSpecialization(TrainingType.valueOf(fields[2].trim()));
                 trainer.setActive(Boolean.parseBoolean(fields[3].trim()));
 
                 String username = usernameRegistryService.reserveUsername(trainer.getFirstName(), trainer.getLastName());
@@ -359,7 +359,7 @@ public class StorageDataInitializer {
             trainer.setId(extractId(key, "trainer."));
             trainer.setFirstName(fields[0].trim());
             trainer.setLastName(fields[1].trim());
-            trainer.setSpecialization(fields[2].trim());
+            trainer.setSpecialization(TrainingType.valueOf(fields[2].trim()));
             trainer.setActive(Boolean.parseBoolean(fields[3].trim()));
 
             String username = usernameRegistryService.reserveUsername(trainer.getFirstName(), trainer.getLastName());

@@ -286,7 +286,7 @@ public class GymCliMenu {
 
         String firstName = readStringInput("First Name: ");
         String lastName = readStringInput("Last Name: ");
-        String specialization = readStringInput("Specialization: ");
+        TrainingType specialization = readTrainingTypeInput("Specialization: ");
 
         Trainer trainer = new Trainer();
         trainer.setFirstName(firstName);
@@ -332,9 +332,14 @@ public class GymCliMenu {
             trainer.setLastName(lastName);
         }
 
-        String specialization = readStringInput("New Specialization (press Enter to keep current): ");
-        if (!specialization.trim().isEmpty()) {
-            trainer.setSpecialization(specialization);
+        String specializationInput = readStringInput("New Specialization (press Enter to keep current): ");
+        if (!specializationInput.trim().isEmpty()) {
+            try {
+                TrainingType specialization = TrainingType.valueOf(specializationInput.trim().toUpperCase());
+                trainer.setSpecialization(specialization);
+            } catch (IllegalArgumentException e) {
+                System.out.println("Invalid specialization. Keeping current value.");
+            }
         }
 
         try {
@@ -521,4 +526,3 @@ public class GymCliMenu {
         }
     }
 }
-
